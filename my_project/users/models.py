@@ -4,12 +4,22 @@ from courses.models import Course, Lesson
 
 class User(AbstractUser):
     """Кастомная модель пользователя."""
-    email = models.EmailField(unique=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    date_of_birth = models.DateField(blank=True, null=True)
+    role = models.CharField(
+        max_length=50,
+        choices=[
+            ('student', 'Student'),
+            ('teacher', 'Teacher'),
+        ],
+        blank=True
+    )
 
     def __str__(self):
-        return self.username
+        return self.email  # Используем email как уникальный идентификатор
 
 class Payment(models.Model):
+    """Модель платежей."""
     PAYMENT_METHODS = (
         ('cash', 'Cash'),
         ('bank_transfer', 'Bank Transfer'),
