@@ -4,7 +4,10 @@ from courses.models import Course, Lesson
 
 class User(AbstractUser):
     """Кастомная модель пользователя."""
+    email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     date_of_birth = models.DateField(blank=True, null=True)
     role = models.CharField(
         max_length=50,
@@ -15,8 +18,11 @@ class User(AbstractUser):
         blank=True
     )
 
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
+
     def __str__(self):
-        return self.email  # Используем email как уникальный идентификатор
+        return self.email
 
 class Payment(models.Model):
     """Модель платежей."""
