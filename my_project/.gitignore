@@ -9,3 +9,5 @@ db.sqlite3
 *.pyo
 *.bak
 *.swp
+venv/
+.idea/
