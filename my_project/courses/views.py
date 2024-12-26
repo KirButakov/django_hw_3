@@ -1,23 +1,44 @@
 from rest_framework import generics
 from .models import Course, Lesson
-from .serializers import CourseWithLessonsSerializer, LessonSerializer  # Импортируем новый сериализатор
+from .serializers import CourseWithLessonsSerializer, LessonSerializer
+from rest_framework.permissions import IsAuthenticated
+from .permissions import IsOwnerOrModerator  # Кастомное разрешение для проверки прав доступа
 
-# Для списка курсов и создания курса
 class CourseListCreateView(generics.ListCreateAPIView):
     queryset = Course.objects.all()
-    serializer_class = CourseWithLessonsSerializer  # Используем новый сериализатор для курсов с уроками
+    serializer_class = CourseWithLessonsSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrModerator]  # Доступ только для владельцев и модераторов
 
-# Для получения, изменения и удаления конкретного курса
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)  # Привязываем курс к текущему пользователю
+
+
 class CourseRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Course.objects.all()
-    serializer_class = CourseWithLessonsSerializer  # Используем новый сериализатор для курсов с уроками
+    serializer_class = CourseWithLessonsSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrModerator]  # Доступ только для владельцев и модераторов
 
-# Для списка уроков и создания урока
+    def get_queryset(self):
+        return Course.objects.filter(user=self.request.user)
+
+
 class LessonListCreateView(generics.ListCreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrModerator]  # Доступ только для владельцев и модераторов
 
-# Для получения, изменения и удаления конкретного урока
+    def perform_create(self, serializer):
+        course = serializer.validated_data['course']
+        if course.user != self.request.user:
+            raise PermissionDenied("You do not have permission to add lessons to this course.")
+        serializer.save(user=self.request.user)  # Привязываем урок к текущему пользователю
+
+
 class LessonRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrModerator]  # Доступ только для владельцев и модераторов
+
+    def get_queryset(self):
+        return Lesson.objects.filter(user=self.request.user)
+

@@ -1,16 +1,35 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from django.contrib.auth.models import User
 from .models import Payment
-from courses.models import Course, Lesson
 
+# Сериализатор для создания пользователя
+class UserCreateSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = get_user_model()
+        fields = ['email', 'password', 'phone_number', 'city', 'avatar', 'date_of_birth', 'role']
+
+    def create(self, validated_data):
+        user = get_user_model().objects.create_user(
+            email=validated_data['email'],
+            password=validated_data['password'],
+            phone_number=validated_data.get('phone_number'),
+            city=validated_data.get('city'),
+            avatar=validated_data.get('avatar'),
+            date_of_birth=validated_data.get('date_of_birth'),
+            role=validated_data.get('role')
+        )
+        return user
+
+# Добавление сериализатора для Payment
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
-        fields = ['id', 'user', 'paid_course', 'paid_lesson', 'amount', 'payment_method', 'payment_date']
+        fields = '__all__'
 
+# Сериализатор для профиля пользователя
 class UserProfileSerializer(serializers.ModelSerializer):
-    payments = PaymentSerializer(many=True, read_only=True)
-
     class Meta:
-        model = User
-        fields = ['id', 'email', 'phone', 'city', 'avatar', 'payments']
+        model = get_user_model()
+        fields = ['email', 'phone_number', 'city', 'avatar', 'date_of_birth', 'role']
