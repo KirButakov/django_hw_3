@@ -20,3 +20,17 @@ class Lesson(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Subscription(models.Model):
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'course')  # Уникальность подписки на курс для каждого пользователя
+
+    def __str__(self):
+        return f"{self.user} subscribed to {self.course.name}"
+
+    def is_subscribed(self, user, course):
+        return Subscription.objects.filter(user=user, course=course).exists()

@@ -1,6 +1,6 @@
 from rest_framework import generics
-from .models import Course, Lesson
-from .serializers import CourseWithLessonsSerializer, LessonSerializer
+from .models import Course, Lesson, Subscription
+from .serializers import CourseWithLessonsSerializer, LessonSerializer, SubscriptionSerializer
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsOwnerOrModerator  # Кастомное разрешение для проверки прав доступа
 
@@ -42,3 +42,19 @@ class LessonRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return Lesson.objects.filter(user=self.request.user)
 
+
+class SubscriptionCreateView(generics.CreateAPIView):
+    queryset = Subscription.objects.all()
+    serializer_class = SubscriptionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class SubscriptionDeleteView(generics.DestroyAPIView):
+    queryset = Subscription.objects.all()
+    serializer_class = SubscriptionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Subscription.objects.filter(user=self.request.user)
