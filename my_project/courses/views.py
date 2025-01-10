@@ -1,12 +1,20 @@
 from rest_framework import generics
-from .models import Course, Lesson, Subscription
-from .serializers import CourseWithLessonsSerializer, LessonSerializer, SubscriptionSerializer
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
+from .models import Course, Lesson, Subscription
+from .serializers import (
+    CourseWithLessonsSerializer,
+    LessonSerializer,
+    SubscriptionSerializer,
+)
 from .permissions import IsOwnerOrModerator  # Кастомное разрешение для проверки прав доступа
+from .paginators import CoursePagination, LessonPagination  # Импорт пагинаторов
+
 
 class CourseListCreateView(generics.ListCreateAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseWithLessonsSerializer
+    pagination_class = CoursePagination  # Использование пагинатора для курсов
     permission_classes = [IsAuthenticated, IsOwnerOrModerator]  # Доступ только для владельцев и модераторов
 
     def perform_create(self, serializer):
@@ -25,6 +33,7 @@ class CourseRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 class LessonListCreateView(generics.ListCreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+    pagination_class = LessonPagination  # Использование пагинатора для уроков
     permission_classes = [IsAuthenticated, IsOwnerOrModerator]  # Доступ только для владельцев и модераторов
 
     def perform_create(self, serializer):
@@ -50,6 +59,7 @@ class SubscriptionCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
 
 class SubscriptionDeleteView(generics.DestroyAPIView):
     queryset = Subscription.objects.all()
