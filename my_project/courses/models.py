@@ -4,7 +4,7 @@ class Course(models.Model):
     name = models.CharField(max_length=255)
     preview = models.ImageField(upload_to='course_previews/', blank=True, null=True)
     description = models.TextField()
-    user = models.ForeignKey("users.User", on_delete=models.CASCADE, null=True, blank=True)  # Добавление связи с пользователем
+    user = models.ForeignKey("users.User", on_delete=models.CASCADE, null=True, blank=True)  # Указываем строку для избежания кругового импорта
 
     def __str__(self):
         return self.name
@@ -16,7 +16,7 @@ class Lesson(models.Model):
     preview = models.ImageField(upload_to='lesson_previews/', blank=True, null=True)
     video_url = models.URLField()
     course = models.ForeignKey(Course, related_name='lessons', on_delete=models.CASCADE)
-    user = models.ForeignKey("users.User", on_delete=models.CASCADE, null=True, blank=True)  # Добавление связи с пользователем
+    user = models.ForeignKey("users.User", on_delete=models.CASCADE, null=True, blank=True)  # Строковый импорт
 
     def __str__(self):
         return self.name
@@ -27,7 +27,7 @@ class Subscription(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
 
     class Meta:
-        unique_together = ('user', 'course')  # Уникальность подписки на курс для каждого пользователя
+        unique_together = ('user', 'course')
 
     def __str__(self):
         return f"{self.user} subscribed to {self.course.name}"
