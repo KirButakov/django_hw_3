@@ -5,7 +5,10 @@ from .views import (
     LessonListCreateView,
     LessonRetrieveUpdateDeleteView,
     SubscriptionCreateView,
-    SubscriptionDeleteView
+    SubscriptionDeleteView,
+    CreateCheckoutSessionView,
+    stripe_webhook,
+    CreatePriceView
 )
 
 urlpatterns = [
@@ -15,4 +18,7 @@ urlpatterns = [
     path('lessons/<int:pk>/', LessonRetrieveUpdateDeleteView.as_view(), name='lesson-retrieve-update-delete'),
     path('subscriptions/', SubscriptionCreateView.as_view(), name='subscription-create'),
     path('subscriptions/<int:pk>/', SubscriptionDeleteView.as_view(), name='subscription-delete'),
+    path('courses/<int:course_id>/checkout/', CreateCheckoutSessionView.as_view(), name='create-checkout-session'),
+    path('webhook/stripe/', stripe_webhook, name='stripe-webhook'),
+    path('create-price/', CreatePriceView.as_view(), name='create-price'),  # Новый путь для создания цены через Stripe
 ]
