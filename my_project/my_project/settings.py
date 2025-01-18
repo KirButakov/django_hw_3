@@ -107,7 +107,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = "users.User"  # Настройка для кастомной модели пользователя
 
-STRIPE_SECRET_KEY = os.getenv('sk_test_51QiZyLR1K4SyBEnABS06uOXBPA2c2UIiw6PBdn92xytoqTbzK8XJJUSn4WMOeSeKM7znTPvb5PQHwGvpDnRUYxm400REtwGWkC')
+STRIPE_SECRET_KEY = os.getenv('secret')
 STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY')
 
 # Настройки для документации
