@@ -10,8 +10,9 @@ from .serializers import (
     LessonSerializer,
     SubscriptionSerializer,
 )
-from .permissions import IsOwnerOrModerator  # Кастомное разрешение для проверки прав доступа
-from .paginators import CoursePagination, LessonPagination  # Импорт пагинаторов
+from .permissions import IsOwnerOrModerator
+from .paginators import CoursePagination, LessonPagination
+from django.core.mail import send_mail
 
 # Настройка ключа API Stripe
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -19,39 +20,53 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 class CourseListCreateView(generics.ListCreateAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseWithLessonsSerializer
-    pagination_class = CoursePagination  # Использование пагинатора для курсов
-    permission_classes = [IsAuthenticated, IsOwnerOrModerator]  # Доступ только для владельцев и модераторов
+    pagination_class = CoursePagination
+    permission_classes = [IsAuthenticated, IsOwnerOrModerator]
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)  # Привязываем курс к текущему пользователю
+        serializer.save(user=self.request.user)
 
 
 class CourseRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseWithLessonsSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrModerator]  # Доступ только для владельцев и модераторов
+    permission_classes = [IsAuthenticated, IsOwnerOrModerator]
 
-    def get_queryset(self):
-        return Course.objects.filter(user=self.request.user)
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        self.notify_subscribers(instance)
+
+    def notify_subscribers(self, course):
+        subscribers = Subscription.objects.filter(course=course).select_related('user')
+        for subscription in subscribers:
+            self.send_update_notification(course, subscription.user.email)
+
+    def send_update_notification(self, course, user_email):
+        send_mail(
+            subject=f"Обновление курса {course.name}",
+            message=f"Курс {course.name} был обновлен. Проверьте новые материалы!",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user_email],
+        )
 
 
 class LessonListCreateView(generics.ListCreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    pagination_class = LessonPagination  # Использование пагинатора для уроков
-    permission_classes = [IsAuthenticated, IsOwnerOrModerator]  # Доступ только для владельцев и модераторов
+    pagination_class = LessonPagination
+    permission_classes = [IsAuthenticated, IsOwnerOrModerator]
 
     def perform_create(self, serializer):
         course = serializer.validated_data['course']
         if course.user != self.request.user:
             raise PermissionDenied("You do not have permission to add lessons to this course.")
-        serializer.save(user=self.request.user)  # Привязываем урок к текущему пользователю
+        serializer.save(user=self.request.user)
 
 
 class LessonRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [IsAuthenticated, IsOwnerOrModerator]  # Доступ только для владельцев и модераторов
+    permission_classes = [IsAuthenticated, IsOwnerOrModerator]
 
     def get_queryset(self):
         return Lesson.objects.filter(user=self.request.user)
@@ -75,7 +90,6 @@ class SubscriptionDeleteView(generics.DestroyAPIView):
         return Subscription.objects.filter(user=self.request.user)
 
 
-# Новый View для создания сессии оплаты через Stripe
 class CreateCheckoutSessionView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -102,7 +116,6 @@ class CreateCheckoutSessionView(generics.CreateAPIView):
         return JsonResponse({'id': checkout_session.id})
 
 
-# Новый View для создания цены для продукта через Stripe
 class CreatePriceView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -114,9 +127,8 @@ class CreatePriceView(generics.CreateAPIView):
             return JsonResponse({'error': 'Product ID and price amount are required'}, status=400)
 
         try:
-            # Создаем цену для продукта через Stripe
             price = stripe.Price.create(
-                unit_amount=int(price_amount) * 100,  # Преобразуем в центы
+                unit_amount=int(price_amount) * 100,
                 currency='usd',
                 product=product_id,
             )
@@ -131,7 +143,6 @@ class CreatePriceView(generics.CreateAPIView):
             return JsonResponse({'error': str(e)}, status=400)
 
 
-# Новый View для обработки webhook от Stripe
 def stripe_webhook(request):
     payload = request.body
     sig_header = request.META['HTTP_STRIPE_SIGNATURE']
@@ -143,19 +154,14 @@ def stripe_webhook(request):
         )
 
     except ValueError as e:
-
         return JsonResponse({'message': 'Invalid payload'}, status=400)
 
     except stripe.error.SignatureVerificationError as e:
-
         return JsonResponse({'message': 'Invalid signature'}, status=400)
 
-    # Обработка события
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
-
         user_email = session.get('customer_email')
-
         print(f"Payment successful for {user_email}")
 
     return JsonResponse({'status': 'success'})

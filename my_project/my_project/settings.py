@@ -1,4 +1,4 @@
-import os  # Импорт модуля os
+import os
 from pathlib import Path
 from dotenv import load_dotenv
 from drf_yasg import openapi
@@ -99,7 +99,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = "users.User"  # Настройка для кастомной модели пользователя
+AUTH_USER_MODEL = 'users.User'
 
 # Stripe настройки
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY')
@@ -119,10 +119,10 @@ schema_view = get_schema_view(
 )
 
 # Настройки Celery
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://127.0.0.1:6379/0')
 CELERY_TIMEZONE = 'UTC'
 
 # Настройки Celery-beat
@@ -131,8 +131,8 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'users.tasks.block_inactive_users',
         'schedule': crontab(hour=0, minute=0),  # Ежедневно в полночь
     },
-    'check-for-course-updates': {
-        'task': 'courses.tasks.check_for_course_updates',
+    'notify-subscribers-about-course-update': {
+        'task': 'courses.tasks.notify_subscribers_about_course_update',
         'schedule': crontab(hour=6, minute=0),  # Ежедневно в 6 утра
     },
 }
