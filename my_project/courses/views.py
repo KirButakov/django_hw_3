@@ -12,7 +12,7 @@ from .serializers import (
 )
 from .permissions import IsOwnerOrModerator
 from .paginators import CoursePagination, LessonPagination
-from django.core.mail import send_mail
+from .tasks import notify_subscribers_about_course_update
 
 # Настройка ключа API Stripe
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -34,20 +34,9 @@ class CourseRetrieveUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         instance = serializer.save()
-        self.notify_subscribers(instance)
-
-    def notify_subscribers(self, course):
-        subscribers = Subscription.objects.filter(course=course).select_related('user')
-        for subscription in subscribers:
-            self.send_update_notification(course, subscription.user.email)
-
-    def send_update_notification(self, course, user_email):
-        send_mail(
-            subject=f"Обновление курса {course.name}",
-            message=f"Курс {course.name} был обновлен. Проверьте новые материалы!",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user_email],
-        )
+        subscriptions = Subscription.objects.filter(course=instance)
+        users_email = [sub.user.email for sub in subscriptions]
+        notify_subscribers_about_course_update.delay(instance.name, users_email)
 
 
 class LessonListCreateView(generics.ListCreateAPIView):

@@ -131,10 +131,6 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'users.tasks.block_inactive_users',
         'schedule': crontab(hour=0, minute=0),  # Ежедневно в полночь
     },
-    'notify-subscribers-about-course-update': {
-        'task': 'courses.tasks.notify_subscribers_about_course_update',
-        'schedule': crontab(hour=6, minute=0),  # Ежедневно в 6 утра
-    },
 }
 
 # Настройки почтового сервиса
