@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from celery.schedules import crontab
+from django.utils import timezone
+
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -23,12 +25,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Сторонние приложения
     'rest_framework',
-    'courses',
-    'users',
     'rest_framework_simplejwt',
     'drf_yasg',
     'django_celery_beat',
+
+    # Ваши приложения
+    'courses',
+    'users',
 ]
 
 MIDDLEWARE = [
@@ -68,7 +74,7 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME', 'mydatabase'),
         'USER': os.getenv('DB_USER', 'myuser'),
         'PASSWORD': os.getenv('DB_PASSWORD', 'mypassword'),
-        'HOST': os.getenv('DB_HOST', '127.0.0.1'),
+        'HOST': os.getenv('DB_HOST', 'db'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
@@ -80,7 +86,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Добавляем настройки для JWT
+# Настройки JWT
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -92,7 +98,6 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 
 USE_I18N = True
-
 USE_TZ = True
 
 STATIC_URL = 'static/'
@@ -141,3 +146,5 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'your-email@gmail.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'your-email-password')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")

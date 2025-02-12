@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment: # ✅ Добавляем переменные напрямую
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    env_file:
+      - .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+
+  backend:
+    build: .
+    container_name: django_backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    networks:
+      - backend
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn my_project.wsgi:application --bind 0.0.0.0:8000"
+
+  celery:
+    build: .
+    container_name: celery_worker
+    restart: always
+    depends_on:
+      backend:
+        condition: service_started
+      redis:
+        condition: service_started
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    networks:
+      - backend
+    command: celery -A my_project worker --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+
+  celery_beat:
+    build: .
+    container_name: celery_beat
+    restart: always
+    depends_on:
+      backend:
+        condition: service_started
+      redis:
+        condition: service_started
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    networks:
+      - backend
+    command: celery -A my_project beat --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+
+volumes:
+  pg_data:
+
+networks:
+  backend:
+
+
+
+
