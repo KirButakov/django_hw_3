@@ -16,7 +16,3 @@ COPY . .
 
 # Открываем порт
 EXPOSE 8000
-
-# Запуск сервера
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "my_project.wsgi:application"]
-
