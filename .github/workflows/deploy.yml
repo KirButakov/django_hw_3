@@ -32,12 +32,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Debug environment variables  # <== Отладка переменных окружения
+        run: env | grep DB_
+
       - name: Run tests
         working-directory: my_project
         env:
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_NAME: ${{ secrets.DB_NAME }}
+          DB_HOST: "localhost"  # <== Добавляем хост, так как тестовая БД в контейнере
+          DB_PORT: "5432"
           DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
         run: python manage.py test
 
