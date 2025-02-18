@@ -5,7 +5,6 @@ on:
     branches:
       - homework
 
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -28,11 +27,13 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
+        working-directory: my_project
         run: |
           python -m pip install --upgrade pip
-          pip install -r my_project/requirements.txt
+          pip install -r requirements.txt
 
       - name: Run tests
+        working-directory: my_project
         env:
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -57,4 +58,5 @@ jobs:
             docker-compose pull  # Обновляем образы, если они изменились
             docker-compose up --build -d
             docker system prune -af  # Очищаем старые образы, чтобы не занимали место
+
 
