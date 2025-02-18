@@ -3,7 +3,8 @@ name: Django CI/CD
 on:
   push:
     branches:
-      - main
+      - homework
+
 
 jobs:
   test:
