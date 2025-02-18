@@ -32,16 +32,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Debug environment variables  # <== Отладка переменных окружения
-        run: env | grep DB_
+      - name: Debug environment variables
+        run: |
+          echo "Checking database environment variables..."
+          echo "DB_NAME=${{ secrets.DB_NAME }}"
+          echo "DB_USER=${{ secrets.DB_USER }}"
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}"
+          echo "DB_HOST=${{ secrets.DB_HOST }}"
+          echo "DB_PORT=${{ secrets.DB_PORT }}"
 
       - name: Run tests
         working-directory: my_project
         env:
+          DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_HOST: "localhost"  # <== Добавляем хост, так как тестовая БД в контейнере
+          DB_HOST: "localhost"
           DB_PORT: "5432"
           DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
         run: python manage.py test
@@ -63,5 +69,6 @@ jobs:
             docker-compose pull  # Обновляем образы, если они изменились
             docker-compose up --build -d
             docker system prune -af  # Очищаем старые образы, чтобы не занимали место
+
 
 
