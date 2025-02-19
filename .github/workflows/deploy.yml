@@ -3,7 +3,7 @@ name: Django CI/CD
 on:
   push:
     branches:
-      - homework  # Запускаем только при пуше в ветку homework
+      - homework
 
 jobs:
   test:
@@ -41,6 +41,15 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
+      - name: Add GitHub to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          eval $(ssh-agent -s)
+          ssh-add ~/.ssh/deploy_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
       - name: Deploy to server
         uses: appleboy/ssh-action@v0.1.10
         with:
@@ -65,13 +74,12 @@ jobs:
 
             cd "$PROJECT_DIR" || exit 1
 
-            # Проверяем, является ли директория git-репозиторием
-            if [ ! -d ".git" ]; then
-              echo "Error: Not a Git repository! Re-cloning..."
-              rm -rf "$PROJECT_DIR"
-              git clone -b homework git@github.com:YOUR_GITHUB_USERNAME/YOUR_REPO.git "$PROJECT_DIR"
-              cd "$PROJECT_DIR" || exit 1
-            fi
+            echo "==== Adding SSH Key ===="
+            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+            chmod 600 ~/.ssh/deploy_key
+
+            echo "==== Re-cloning repository ===="
+            GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" git clone -b homework git@github.com:${{ secrets.GITHUB_USERNAME }}/${{ secrets.REPO_NAME }} "$PROJECT_DIR"
 
             echo "==== Pulling latest changes ===="
             git pull origin homework || { echo "Git pull failed!"; exit 1; }
@@ -92,10 +100,9 @@ jobs:
             docker-compose pull || { echo "Docker pull failed!"; exit 1; }
 
             echo "==== Checking database variables ===="
-            DB_HOST="${{ secrets.DB_HOST }}"
-            DB_PORT="${{ secrets.DB_PORT }}"
-            DB_USER="${{ secrets.DB_USER }}"
-
+            export DB_HOST="${{ secrets.DB_HOST }}"
+            export DB_PORT="${{ secrets.DB_PORT }}"
+            export DB_USER="${{ secrets.DB_USER }}"
             echo "DB_HOST=${DB_HOST}"
             echo "DB_PORT=${DB_PORT}"
             echo "DB_USER=${DB_USER}"
@@ -111,7 +118,9 @@ jobs:
             done
 
             echo "==== Starting Docker containers ===="
-            docker-compose up --build -d || { echo "Docker compose failed!"; exit 1; }
+            docker-compose up --build -d
+            sleep 5
+            docker ps -a || { echo "Docker container failed to start!"; exit 1; }
 
             echo "==== Running database migrations ===="
             docker exec -i my_project_web python manage.py migrate || { echo "Migration failed!"; exit 1; }
