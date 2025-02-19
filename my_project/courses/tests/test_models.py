@@ -11,12 +11,11 @@ class CourseModelTests(APITestCase):
             username="testuser", password="password123"
         )
 
-        # Создание курса
+        # Создание курса без preview
         self.course = Course.objects.create(
             name="Test Course",
             description="Test description",
-            preview="test_preview_url",
-            user=self.user
+            user=self.user  # Убрали preview
         )
 
     def test_create_course(self):
@@ -26,8 +25,7 @@ class CourseModelTests(APITestCase):
         # Данные для создания нового курса
         data = {
             "name": "New Course",
-            "description": "New course description",
-            "preview": "new_preview_url"
+            "description": "New course description"
         }
 
         # Отправка POST-запроса для создания курса
@@ -65,12 +63,11 @@ class SubscriptionModelTests(APITestCase):
             username="testuser", password="password123"
         )
 
-        # Создание курса
+        # Создание курса без preview
         self.course = Course.objects.create(
             name="Test Course",
             description="Test description",
-            preview="test_preview_url",
-            user=self.user
+            user=self.user  # Убрали preview
         )
 
     def test_create_subscription(self):
