@@ -23,14 +23,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Debug environment variables
-        run: |
-          echo "Checking environment variables..."
-          echo "DB_HOST=${{ secrets.DB_HOST }}"
-          echo "DB_NAME=${{ secrets.DB_NAME }}"
-          echo "DB_USER=${{ secrets.DB_USER }}"
-          echo "DB_PORT=${{ secrets.DB_PORT }}"
-
       - name: Run tests with SQLite
         working-directory: my_project
         env:
@@ -48,20 +40,10 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo "==== Checking server directories ===="
-            ls -la /home/${{ secrets.SERVER_USER }}
-
             echo "==== Setting up project directory ===="
-            PROJECT_DIR="/django_hw_3/my_project"
+            PROJECT_DIR="$HOME/django_hw_3/my_project"
 
-            if [ ! -d "$PROJECT_DIR" ]; then
-              echo "Project directory not found. Creating it..."
-              mkdir -p "$PROJECT_DIR"
-              chmod 755 "$PROJECT_DIR"
-              git clone -b homework git@github.com:YOUR_GITHUB_USERNAME/YOUR_REPO.git "$PROJECT_DIR"
-            fi
-
-            cd "$PROJECT_DIR" || exit 1
+            cd "$PROJECT_DIR" || { echo "Project directory not found! Exiting..."; exit 1; }
 
             echo "==== Checking Git status ===="
             git status
@@ -80,21 +62,6 @@ jobs:
 
             echo "==== Pulling updated Docker images ===="
             docker-compose pull
-
-            echo "==== Checking database variables ===="
-            echo "DB_HOST=${{ secrets.DB_HOST }}"
-            echo "DB_PORT=${{ secrets.DB_PORT }}"
-            echo "DB_USER=${{ secrets.DB_USER }}"
-
-            echo "==== Waiting for PostgreSQL to be ready ===="
-            for i in {1..30}; do
-              if pg_isready -h "${{ secrets.DB_HOST }}" -p "${{ secrets.DB_PORT }}" -U "${{ secrets.DB_USER }}"; then
-                echo "PostgreSQL is ready!"
-                break
-              fi
-              echo "PostgreSQL is not ready, retrying..."
-              sleep 2
-            done
 
             echo "==== Starting Docker containers ===="
             docker-compose up --build -d
