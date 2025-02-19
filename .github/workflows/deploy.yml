@@ -3,7 +3,7 @@ name: Django CI/CD
 on:
   push:
     branches:
-      - homework
+      - homework  # Убедись, что это правильная ветка
 
 jobs:
   test:
@@ -48,27 +48,58 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /home/${{ secrets.SERVER_USER }}/my_project
-            git pull origin main
-            docker-compose down
-            docker-compose pull  # Обновляем образы, если они изменились
+            echo "==== Checking server directories ===="
+            ls -la /home/${{ secrets.SERVER_USER }}
 
-            echo "Waiting for PostgreSQL to be ready..."
+            echo "==== Navigating to project directory ===="
+            if [ ! -d "/home/${{ secrets.SERVER_USER }}/my_project" ]; then
+              echo "Project directory not found. Cloning repository..."
+              git clone -b homework git@github.com:YOUR_GITHUB_USERNAME/YOUR_REPO.git /home/${{ secrets.SERVER_USER }}/my_project
+            fi
+            cd /home/${{ secrets.SERVER_USER }}/my_project || exit 1
+
+            echo "==== Checking Git status ===="
+            git status
+
+            echo "==== Pulling latest changes ===="
+            git pull origin homework
+
+            echo "==== Checking for docker-compose.yml ===="
+            ls -la /home/${{ secrets.SERVER_USER }}/my_project/docker-compose.yml
+
+            echo "==== Stopping existing containers ===="
+            docker-compose down
+
+            echo "==== Pulling updated Docker images ===="
+            docker-compose pull
+
+            echo "==== Checking database variables ===="
+            echo "DB_HOST=${{ secrets.DB_HOST }}"
+            echo "DB_PORT=${{ secrets.DB_PORT }}"
+            echo "DB_USER=${{ secrets.DB_USER }}"
+
+            echo "==== Waiting for PostgreSQL to be ready ===="
             for i in {1..30}; do
-              pg_isready -h ${{ secrets.DB_HOST }} -p ${{ secrets.DB_PORT }} -U ${{ secrets.DB_USER }} && break
+              if pg_isready -h "${{ secrets.DB_HOST }}" -p "${{ secrets.DB_PORT }}" -U "${{ secrets.DB_USER }}"; then
+                echo "PostgreSQL is ready!"
+                break
+              fi
               echo "PostgreSQL is not ready, retrying..."
               sleep 2
             done
 
+            echo "==== Starting Docker containers ===="
             docker-compose up --build -d
 
-            echo "Running database migrations..."
+            echo "==== Running database migrations ===="
             docker exec -i my_project_web python manage.py migrate
 
-            echo "Collecting static files..."
+            echo "==== Collecting static files ===="
             docker exec -i my_project_web python manage.py collectstatic --noinput
 
-            docker system prune -af  # Очищаем старые образы, чтобы не занимали место
+            echo "==== Cleaning up unused Docker images ===="
+            docker system prune -af
+
 
 
 
