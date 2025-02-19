@@ -26,7 +26,10 @@ jobs:
       - name: Debug environment variables
         run: |
           echo "Checking environment variables..."
-          echo "DJANGO_SECRET_KEY='[HIDDEN]'"  # Скрываем секретный ключ для безопасности
+          echo "DB_HOST=${{ secrets.DB_HOST }}"
+          echo "DB_NAME=${{ secrets.DB_NAME }}"
+          echo "DB_USER=${{ secrets.DB_USER }}"
+          echo "DB_PORT=${{ secrets.DB_PORT }}"
 
       - name: Run tests with SQLite
         working-directory: my_project
@@ -49,7 +52,22 @@ jobs:
             git pull origin main
             docker-compose down
             docker-compose pull  # Обновляем образы, если они изменились
+
+            echo "Waiting for PostgreSQL to be ready..."
+            for i in {1..30}; do
+              pg_isready -h ${{ secrets.DB_HOST }} -p ${{ secrets.DB_PORT }} -U ${{ secrets.DB_USER }} && break
+              echo "PostgreSQL is not ready, retrying..."
+              sleep 2
+            done
+
             docker-compose up --build -d
+
+            echo "Running database migrations..."
+            docker exec -i my_project_web python manage.py migrate
+
+            echo "Collecting static files..."
+            docker exec -i my_project_web python manage.py collectstatic --noinput
+
             docker system prune -af  # Очищаем старые образы, чтобы не занимали место
 
 

@@ -95,7 +95,7 @@ else:
             'NAME': os.getenv('DB_NAME', 'mydb'),
             'USER': os.getenv('DB_USER', 'myuser'),
             'PASSWORD': os.getenv('DB_PASSWORD', 'mypassword'),
-            'HOST': os.getenv('DB_HOST', 'localhost'),  # Изменил на localhost
+            'HOST': os.getenv('DB_HOST', '127.0.0.1'),
             'PORT': os.getenv('DB_PORT', '5432'),
         }
     }
