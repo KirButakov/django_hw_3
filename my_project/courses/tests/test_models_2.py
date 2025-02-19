@@ -10,12 +10,11 @@ class LessonModelTests(APITestCase):
         User = get_user_model()
         self.user = User.objects.create_user(username="testuser", password="password123")
 
-        # Создание курса
+        # Создание курса без preview (так как его нет в модели Course)
         self.course = Course.objects.create(
             name="Test Course",
             description="Test description",
-            preview="test_preview_url",
-            user=self.user
+            user=self.user  # Убрали preview
         )
 
         # Создание урока
