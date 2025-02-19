@@ -1,0 +1,129 @@
+name: Django CI/CD
+
+on:
+  push:
+    branches:
+      - homework
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        working-directory: my_project
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests with SQLite
+        working-directory: my_project
+        env:
+          DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+        run: python manage.py test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          eval $(ssh-agent -s)
+          ssh-add ~/.ssh/deploy_key
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+
+      - name: Test SSH Connection
+        run: ssh -T git@github.com || echo "SSH connection failed!"
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.HOST_1994 }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e  # Останавливаем скрипт при ошибке
+
+            echo "==== Checking server directories ===="
+            PROJECT_DIR="/home/${{ secrets.USER }}/my_project"
+
+            if [ ! -d "$PROJECT_DIR" ]; then
+              echo "Project directory not found. Creating it..."
+              mkdir -p "$PROJECT_DIR"
+              chown ${{ secrets.USER }}:${{ secrets.USER }} "$PROJECT_DIR"
+              chmod 755 "$PROJECT_DIR"
+            fi
+
+            cd "$PROJECT_DIR" || exit 1
+
+            echo "==== Configuring Git ===="
+            if [ ! -d ".git" ]; then
+              git clone -b homework git@github.com:${{ secrets.GITHUB_USERNAME }}/${{ secrets.REPO_NAME }} .
+            fi
+            git pull origin homework || { echo "Git pull failed!"; exit 1; }
+
+            echo "==== Checking for docker-compose.yml ===="
+            if [ ! -f "docker-compose.yml" ]; then
+              echo "Error: docker-compose.yml not found!"
+              exit 1
+            fi
+
+            echo "==== Stopping existing containers ===="
+            docker-compose down || echo "No containers running."
+
+            echo "==== Removing old images ===="
+            docker image prune -af || echo "Cleanup failed, continuing..."
+
+            echo "==== Pulling updated Docker images ===="
+            docker-compose pull || { echo "Docker pull failed!"; exit 1; }
+
+            echo "==== Setting up database environment ===="
+            export DB_HOST="${{ secrets.DB_HOST }}"
+            export DB_PORT="${{ secrets.DB_PORT }}"
+            export DB_USER="${{ secrets.DB_USER }}"
+            export PGPASSWORD="${{ secrets.DB_PASSWORD }}"
+
+            echo "==== Waiting for PostgreSQL to be ready ===="
+            for i in {1..30}; do
+              if pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER"; then
+                echo "PostgreSQL is ready!"
+                break
+              fi
+              echo "PostgreSQL is not ready, retrying..."
+              sleep 2
+            done
+
+            echo "==== Starting Docker containers ===="
+            docker-compose up --build -d
+            sleep 5
+            docker ps -a || { echo "Docker container failed to start!"; exit 1; }
+
+            echo "==== Running database migrations ===="
+            docker exec -i my_project_web python manage.py migrate || { echo "Migration failed!"; exit 1; }
+
+            echo "==== Collecting static files ===="
+            docker exec -i my_project_web python manage.py collectstatic --noinput || { echo "Collectstatic failed!"; exit 1; }
+
+            echo "==== Cleaning up unused Docker images ===="
+            docker image prune -af || echo "Cleanup failed, continuing..."
+
+
+
+
+
+
+
+
+
+
+
