@@ -23,14 +23,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Debug environment variables
-        run: |
-          echo "Checking environment variables..."
-          echo "DB_HOST=${{ secrets.DB_HOST }}"
-          echo "DB_NAME=${{ secrets.DB_NAME }}"
-          echo "DB_USER=${{ secrets.DB_USER }}"
-          echo "DB_PORT=${{ secrets.DB_PORT }}"
-
       - name: Run tests with SQLite
         working-directory: my_project
         env:
@@ -60,11 +52,8 @@ jobs:
             set -e  # Останавливаем скрипт при ошибке
 
             echo "==== Checking server directories ===="
-            ls -la /home/${{ secrets.USER }}
-
             PROJECT_DIR="/home/${{ secrets.USER }}/my_project"
 
-            echo "==== Setting up project directory ===="
             if [ ! -d "$PROJECT_DIR" ]; then
               echo "Project directory not found. Creating it..."
               mkdir -p "$PROJECT_DIR"
@@ -74,14 +63,10 @@ jobs:
 
             cd "$PROJECT_DIR" || exit 1
 
-            echo "==== Adding SSH Key ===="
-            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-            chmod 600 ~/.ssh/deploy_key
-
-            echo "==== Re-cloning repository ===="
-            GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" git clone -b homework git@github.com:${{ secrets.GITHUB_USERNAME }}/${{ secrets.REPO_NAME }} "$PROJECT_DIR"
-
-            echo "==== Pulling latest changes ===="
+            echo "==== Configuring Git ===="
+            if [ ! -d ".git" ]; then
+              git clone -b homework git@github.com:${{ secrets.GITHUB_USERNAME }}/${{ secrets.REPO_NAME }} .
+            fi
             git pull origin homework || { echo "Git pull failed!"; exit 1; }
 
             echo "==== Checking for docker-compose.yml ===="
@@ -93,19 +78,17 @@ jobs:
             echo "==== Stopping existing containers ===="
             docker-compose down || echo "No containers running."
 
-            echo "==== Removing old dependencies ===="
-            docker system prune -af || echo "Cleanup failed, continuing..."
+            echo "==== Removing old images ===="
+            docker image prune -af || echo "Cleanup failed, continuing..."
 
             echo "==== Pulling updated Docker images ===="
             docker-compose pull || { echo "Docker pull failed!"; exit 1; }
 
-            echo "==== Checking database variables ===="
+            echo "==== Setting up database environment ===="
             export DB_HOST="${{ secrets.DB_HOST }}"
             export DB_PORT="${{ secrets.DB_PORT }}"
             export DB_USER="${{ secrets.DB_USER }}"
-            echo "DB_HOST=${DB_HOST}"
-            echo "DB_PORT=${DB_PORT}"
-            echo "DB_USER=${DB_USER}"
+            export PGPASSWORD="${{ secrets.DB_PASSWORD }}"
 
             echo "==== Waiting for PostgreSQL to be ready ===="
             for i in {1..30}; do
@@ -129,7 +112,8 @@ jobs:
             docker exec -i my_project_web python manage.py collectstatic --noinput || { echo "Collectstatic failed!"; exit 1; }
 
             echo "==== Cleaning up unused Docker images ===="
-            docker system prune -af || echo "Cleanup failed, continuing..."
+            docker image prune -af || echo "Cleanup failed, continuing..."
+
 
 
 
