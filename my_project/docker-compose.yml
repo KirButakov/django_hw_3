@@ -54,6 +54,7 @@ services:
     env_file:
       - .env
     environment:
+      - DJANGO_SECRET_KEY=DiUv1mw-TXeIgQ3Bho7IOnRf7xRa3nUvpiGxxrZju2XQHGt2T5rD2ufyEawusmumf58
       - ALLOWED_HOSTS=127.0.0.1,localhost,django_backend,172.19.0.4,*
     volumes:
       - .:/app
