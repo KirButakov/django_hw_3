@@ -5,7 +5,7 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from celery.schedules import crontab
 from django.utils import timezone
-
+import sys
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -78,6 +78,16 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'my_project.wsgi.application'
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+if 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'test_db.sqlite3',
+        }
+    }
 
 # Настройки базы данных
 DATABASES = {

@@ -8,15 +8,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: ${{ secrets.DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.DB_NAME }}
-        ports:
-          - 5432:5432
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -34,21 +25,12 @@ jobs:
 
       - name: Debug environment variables
         run: |
-          echo "Checking database environment variables..."
-          echo "DB_NAME='${{ secrets.DB_NAME }}'"
-          echo "DB_USER='${{ secrets.DB_USER }}'"
-          echo "DB_PASSWORD='[HIDDEN]'"  # Пароль скрываем ради безопасности
-          echo "DB_HOST='${{ secrets.DB_HOST }}'"
-          echo "DB_PORT='${{ secrets.DB_PORT }}'"
+          echo "Checking environment variables..."
+          echo "DJANGO_SECRET_KEY='[HIDDEN]'"  # Скрываем секретный ключ для безопасности
 
-      - name: Run tests
+      - name: Run tests with SQLite
         working-directory: my_project
         env:
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_HOST: "localhost"
-          DB_PORT: "5432"
           DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
         run: python manage.py test
 
