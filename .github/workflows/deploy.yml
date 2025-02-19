@@ -3,7 +3,7 @@ name: Django CI/CD
 on:
   push:
     branches:
-      - homework  # Убедись, что это правильная ветка
+      - homework
 
 jobs:
   test:
@@ -54,8 +54,9 @@ jobs:
             echo "==== Setting up project directory ===="
             if [ ! -d "/home/${{ secrets.SERVER_USER }}/my_project" ]; then
               echo "Project directory not found. Creating it..."
-              mkdir -p /home/${{ secrets.SERVER_USER }}/my_project
-              chmod 755 /home/${{ secrets.SERVER_USER }}/my_project
+              sudo mkdir -p /home/${{ secrets.SERVER_USER }}/my_project
+              sudo chmod 755 /home/${{ secrets.SERVER_USER }}/my_project
+              sudo chown ${{ secrets.SERVER_USER }}:${{ secrets.SERVER_USER }} /home/${{ secrets.SERVER_USER }}/my_project
               git clone -b homework git@github.com:YOUR_GITHUB_USERNAME/YOUR_REPO.git /home/${{ secrets.SERVER_USER }}/my_project
             fi
 
