@@ -51,11 +51,14 @@ jobs:
             echo "==== Checking server directories ===="
             ls -la /home/${{ secrets.SERVER_USER }}
 
-            echo "==== Navigating to project directory ===="
+            echo "==== Setting up project directory ===="
             if [ ! -d "/home/${{ secrets.SERVER_USER }}/my_project" ]; then
-              echo "Project directory not found. Cloning repository..."
+              echo "Project directory not found. Creating it..."
+              mkdir -p /home/${{ secrets.SERVER_USER }}/my_project
+              chmod 755 /home/${{ secrets.SERVER_USER }}/my_project
               git clone -b homework git@github.com:YOUR_GITHUB_USERNAME/YOUR_REPO.git /home/${{ secrets.SERVER_USER }}/my_project
             fi
+
             cd /home/${{ secrets.SERVER_USER }}/my_project || exit 1
 
             echo "==== Checking Git status ===="
@@ -99,6 +102,7 @@ jobs:
 
             echo "==== Cleaning up unused Docker images ===="
             docker system prune -af
+
 
 
 
