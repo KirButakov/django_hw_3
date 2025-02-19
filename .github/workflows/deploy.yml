@@ -52,7 +52,7 @@ jobs:
             ls -la /home/${{ secrets.SERVER_USER }}
 
             echo "==== Setting up project directory ===="
-            PROJECT_DIR="/home/${{ secrets.SERVER_USER }}/my_project"
+            PROJECT_DIR="/django_hw_3/my_project"
 
             if [ ! -d "$PROJECT_DIR" ]; then
               echo "Project directory not found. Creating it..."
