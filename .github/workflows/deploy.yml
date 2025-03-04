@@ -38,6 +38,11 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+      - name: Debug SSH Key
+        run: |
+          echo "SSH key:"
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | ssh-keygen -y -f /dev/stdin
+
       - name: Deploy to server
         uses: appleboy/ssh-action@v0.1.10
         with:
