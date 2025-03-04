@@ -101,14 +101,15 @@ jobs:
           sudo docker ps -a || { echo "Docker container failed to start!"; exit 1; }
 
           echo "==== Running database migrations ===="
-          sudo docker exec -i my_project_web python manage.py migrate || { echo "Migration failed!"; exit 1; }
+          sudo docker exec -i django_backend python manage.py migrate || { echo "Migration failed!"; exit 1; }
 
           echo "==== Collecting static files ===="
-          sudo docker exec -i my_project_web python manage.py collectstatic --noinput || { echo "Collectstatic failed!"; exit 1; }
+          sudo docker exec -i django_backend python manage.py collectstatic --noinput || { echo "Collectstatic failed!"; exit 1; }
 
           echo "==== Cleaning up unused Docker images ===="
           sudo docker image prune -af || echo "Cleanup failed, continuing..."
           EOF
+
 
 
 
