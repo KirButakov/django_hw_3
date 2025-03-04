@@ -41,6 +41,10 @@ jobs:
       - name: Test SSH Connection
         run: ssh -T git@github.com || echo "SSH connection failed!"
 
+      - name: Copy docker-compose.yml to server
+        run: |
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key my_project/docker-compose.yml ${{ secrets.USER }}@${{ secrets.HOST_1994 }}:/home/${{ secrets.USER }}/my_project/docker-compose.yml
+
       - name: Deploy to server
         uses: appleboy/ssh-action@v0.1.10
         with:
