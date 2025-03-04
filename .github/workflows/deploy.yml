@@ -69,19 +69,19 @@ jobs:
           fi
 
           echo "==== Checking for docker-compose.yml ===="
-          if [ ! -f "$PROJECT_DIR/docker-compose.yml" ]; then
-            echo "Error: docker-compose.yml not found in $PROJECT_DIR"
+          if [ ! -f "my_project/docker-compose.yml" ]; then
+            echo "Error: docker-compose.yml not found!"
             exit 1
           fi
 
           echo "==== Stopping existing containers ===="
-          docker-compose -f "$PROJECT_DIR/docker-compose.yml" down || echo "No containers running."
+          docker-compose -f my_project/docker-compose.yml down || echo "No containers running."
 
           echo "==== Removing old images ===="
           docker image prune -af || echo "Cleanup failed, continuing..."
 
           echo "==== Pulling updated Docker images ===="
-          docker-compose -f "$PROJECT_DIR/docker-compose.yml" pull || { echo "Docker pull failed!"; exit 1; }
+          docker-compose -f my_project/docker-compose.yml pull || { echo "Docker pull failed!"; exit 1; }
 
           echo "==== Setting up database environment ===="
           export DB_HOST="${{ secrets.DB_HOST }}"
@@ -100,7 +100,7 @@ jobs:
           done
 
           echo "==== Starting Docker containers ===="
-          docker-compose -f "$PROJECT_DIR/docker-compose.yml" up --build -d
+          docker-compose -f my_project/docker-compose.yml up --build -d
           sleep 5
           docker ps -a || { echo "Docker container failed to start!"; exit 1; }
 
@@ -113,6 +113,7 @@ jobs:
           echo "==== Cleaning up unused Docker images ===="
           docker image prune -af || echo "Cleanup failed, continuing..."
           EOF
+
 
 
 
