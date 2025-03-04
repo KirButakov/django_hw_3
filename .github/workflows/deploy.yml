@@ -60,7 +60,14 @@ jobs:
             cd "$PROJECT_DIR" || exit 1
 
             echo "==== Updating project code ===="
-            git pull origin homework || { echo "Git pull failed!"; exit 1; }
+            if [ -d ".git" ]; then
+              git config --global --add safe.directory "$PROJECT_DIR"
+              git reset --hard
+              git pull origin homework || { echo "Git pull failed!"; exit 1; }
+            else
+              echo "Error: Git repository not found!"
+              exit 1
+            fi
 
             echo "==== Checking for docker-compose.yml ===="
             if [ ! -f "docker-compose.yml" ]; then
