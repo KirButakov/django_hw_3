@@ -62,12 +62,6 @@ jobs:
 
             cd "$PROJECT_DIR" || exit 1
 
-            echo "==== Configuring Git ===="
-            if [ ! -d ".git" ]; then
-              git clone -b homework git@github.com:${{ secrets.GITHUB_USERNAME }}/${{ secrets.REPO_NAME }} .
-            fi
-            git pull origin homework || { echo "Git pull failed!"; exit 1; }
-
             echo "==== Checking for docker-compose.yml ===="
             if [ ! -f "docker-compose.yml" ]; then
               echo "Error: docker-compose.yml not found!"
