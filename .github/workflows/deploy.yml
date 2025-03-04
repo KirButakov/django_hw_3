@@ -38,13 +38,6 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Test SSH Connection
-        run: ssh -T git@github.com || echo "SSH connection failed!"
-
-      - name: Copy docker-compose.yml to server
-        run: |
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key my_project/docker-compose.yml ${{ secrets.USER }}@${{ secrets.HOST_1994 }}:/home/${{ secrets.USER }}/my_project/docker-compose.yml
-
       - name: Deploy to server
         uses: appleboy/ssh-action@v0.1.10
         with:
@@ -65,6 +58,9 @@ jobs:
             fi
 
             cd "$PROJECT_DIR" || exit 1
+
+            echo "==== Updating project code ===="
+            git pull origin homework || { echo "Git pull failed!"; exit 1; }
 
             echo "==== Checking for docker-compose.yml ===="
             if [ ! -f "docker-compose.yml" ]; then
